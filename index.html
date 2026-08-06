@@ -1,3 +1,5 @@
+<!-- index.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,206 +8,15 @@
   <meta name="description" content="A brief description of your website for search engines.">
   <title>Your Website Title</title>
   
-  <style>
-    /* CSS Custom Properties for Easy Theming */
-    :root {
-      --primary-color: #0d0d0e;
-      --primary-hover: #1e1d1e;
-      --bg-color: #161919;
-      --card-bg: #171515;
-      --text-color: #f7f8fa;
-      --text-muted: #64748b;
-      --border-color: #e2e8f0;
-      --max-width: 1100px;
-    }
-
-    /* Base Reset & Typography */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      line-height: 1.6;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    a {
-      color: var(--primary-color);
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    /* Container */
-    .container {
-      width: 100%;
-      max-width: var(--max-width);
-      margin: 0 auto;
-      padding: 0 1.5rem;
-    }
-
-    /* Navigation Bar */
-    header {
-      background-color: var(--card-bg);
-      border-bottom: 1px solid var(--border-color);
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      height: 70px;
-    }
-
-    .logo {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--text-color);
-    }
-
-    .nav-links {
-      display: flex;
-      list-style: none;
-      gap: 1.5rem;
-    }
-
-    .nav-links a {
-      color: var(--text-muted);
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-
-    .nav-links a:hover {
-      color: var(--primary-color);
-      text-decoration: none;
-    }
-
-    /* Hero Section */
-    .hero {
-      padding: 5rem 0 3rem;
-      text-align: center;
-    }
-
-    .hero h1 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 1rem;
-      letter-spacing: -0.025em;
-    }
-
-    .hero p {
-      font-size: 1.125rem;
-      color: var(--text-muted);
-      max-width: 600px;
-      margin: 0 auto 2rem;
-    }
-
-    .btn {
-      display: inline-block;
-      background-color: var(--primary-color);
-      color: #ffffff;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.375rem;
-      font-weight: 600;
-      transition: background-color 0.2s;
-    }
-
-    .btn:hover {
-      background-color: var(--primary-hover);
-      text-decoration: none;
-    }
-
-    /* Features Grid */
-    .features {
-      padding: 3rem 0 5rem;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .card {
-      background-color: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 0.5rem;
-      padding: 1.75rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-
-    .card h3 {
-      font-size: 1.25rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .card p {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-    }
-
-    /* Footer */
-    footer {
-      margin-top: auto;
-      background-color: var(--card-bg);
-      border-top: 1px solid var(--border-color);
-      padding: 2rem 0;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.875rem;
-    }
-
-    /* Responsive Mobile Menu Toggle */
-    .menu-toggle {
-      display: none;
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: var(--text-color);
-    }
-
-    @media (max-width: 640px) {
-      .menu-toggle {
-        display: block;
-      }
-
-      .nav-links {
-        display: none;
-        flex-direction: column;
-        position: absolute;
-        top: 70px;
-        left: 0;
-        width: 100%;
-        background-color: var(--card-bg);
-        border-bottom: 1px solid var(--border-color);
-        padding: 1rem 1.5rem;
-      }
-
-      .nav-links.active {
-        display: flex;
-      }
-    }
-  </style>
+  <!-- Link to external CSS file -->
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
   <!-- Navigation -->
   <header>
     <div class="container navbar">
-      <a href="#" class="logo">David Gao</a>
+      <a href="#" class="logo">BrandName</a>
       <button class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu">&#9776;</button>
       <ul class="nav-links" id="nav-links">
         <li><a href="#home">Home</a></li>
