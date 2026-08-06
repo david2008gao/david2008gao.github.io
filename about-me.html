@@ -14,13 +14,13 @@
   <header>
     <div class="container navbar">
       <!-- Clicking logo returns to Home -->
-      <a href="index.html" class="logo">BrandName</a>
+      <a href="index.html" class="logo">David Gao</a>
       
       <button class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu">&#9776;</button>
       
       <!-- Navigation Links -->
       <ul class="nav-links" id="nav-links">
-        <li><a href="index.html">Home</a></li>
+        <li><a href="about-me.html">About Me</a></li>
         <li><a href="#resume">Resume</a></li>
         <li><a href="#showcase">Showcase</a></li>
       </ul>
@@ -40,18 +40,8 @@
   <!-- Footer -->
   <footer>
     <div class="container">
-      <p>&copy; <span id="year"></span> BrandName. All rights reserved.</p>
+      <p>&copy; 2026 BrandName. All rights reserved.</p>
     </div>
   </footer>
-
-  <!-- JavaScript for Mobile Menu & Dynamic Year -->
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-    const menuToggle = document.getElementById('menu-toggle');
-    const navLinks = document.getElementById('nav-links');
-    menuToggle.addEventListener('click', () => {
-      navLinks.classList.toggle('active');
-    });
-  </script>
 </body>
 </html>
