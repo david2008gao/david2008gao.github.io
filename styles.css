@@ -117,7 +117,8 @@ header {
 
 .btn:hover {
   background-color: var(--primary-hover);
-  text-decoration: none;
+  text-decoration: underline;
+  font-size: 1.05rem;
 }
 
 /* Features Grid */
