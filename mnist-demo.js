@@ -92,26 +92,141 @@
   }
 
   // ---------------------------------------------------------------------
-  // Preprocess: canvas -> 28x28 grayscale array, normalized to [0, 1],
-  // roughly centered the way MNIST digits are.
+  // Preprocess: canvas -> 28x28 grayscale array in [0, 1].
+  //
+  // This mirrors how the MNIST images themselves were built, which matters a
+  // lot: the network only ever saw digits prepared this exact way, so a raw
+  // 280 -> 28 squash (whatever size/position the user happened to draw at) is
+  // off-distribution and predicts badly. The original recipe is:
+  //   1. crop to the bounding box of the ink,
+  //   2. scale that box, preserving aspect ratio, so its larger side is 20px,
+  //   3. paste into a 28x28 field positioned so the digit's centre of mass
+  //      lands on the centre of the field (not the bounding box centre).
+  // Step 2 makes the model size-invariant, step 3 makes it position-invariant.
   // ---------------------------------------------------------------------
-  function canvasToModelInput() {
-    // Downscale directly to 28x28 using an offscreen canvas.
-    const off = document.createElement("canvas");
-    off.width = MODEL_INPUT_SIZE;
-    off.height = MODEL_INPUT_SIZE;
-    const octx = off.getContext("2d");
-    octx.fillStyle = "#000000";
-    octx.fillRect(0, 0, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE);
-    octx.drawImage(canvas, 0, 0, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE);
+  const DIGIT_BOX = 20;     // MNIST fits the digit into a 20x20 box...
+  const INK_THRESHOLD = 8;  // 0-255; ignore stray anti-aliasing when finding the bbox
 
-    const imgData = octx.getImageData(0, 0, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE).data;
-    const input = new Array(MODEL_INPUT_SIZE * MODEL_INPUT_SIZE);
-    for (let i = 0; i < MODEL_INPUT_SIZE * MODEL_INPUT_SIZE; i++) {
-      // Use the red channel (grayscale strokes) as the intensity, scaled to [0,1]
-      input[i] = imgData[i * 4] / 255;
+  // Downscale a source region in repeated halving steps. A single large
+  // drawImage() downscale skips source pixels in some browsers, which eats
+  // thin strokes; halving keeps the box-filter averaging intact.
+  function downscaleRegion(src, sx, sy, sw, sh, dw, dh) {
+    let cur = document.createElement("canvas");
+    cur.width = sw;
+    cur.height = sh;
+    let cctx = cur.getContext("2d");
+    cctx.imageSmoothingEnabled = true;
+    cctx.imageSmoothingQuality = "high";
+    cctx.drawImage(src, sx, sy, sw, sh, 0, 0, sw, sh);
+
+    let cw = sw, ch = sh;
+    while (cw > dw * 2 && ch > dh * 2) {
+      const nw = Math.max(dw, Math.round(cw / 2));
+      const nh = Math.max(dh, Math.round(ch / 2));
+      const next = document.createElement("canvas");
+      next.width = nw;
+      next.height = nh;
+      const nctx = next.getContext("2d");
+      nctx.imageSmoothingEnabled = true;
+      nctx.imageSmoothingQuality = "high";
+      nctx.drawImage(cur, 0, 0, cw, ch, 0, 0, nw, nh);
+      cur = next;
+      cctx = nctx;
+      cw = nw;
+      ch = nh;
     }
+
+    const out = document.createElement("canvas");
+    out.width = dw;
+    out.height = dh;
+    const octx = out.getContext("2d");
+    octx.imageSmoothingEnabled = true;
+    octx.imageSmoothingQuality = "high";
+    octx.drawImage(cur, 0, 0, cw, ch, 0, 0, dw, dh);
+    return octx.getImageData(0, 0, dw, dh).data;
+  }
+
+  // Returns a 784-length array, or null if the canvas is blank.
+  function canvasToModelInput() {
+    const src = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+    // --- 1. bounding box of the ink -------------------------------------
+    let minX = canvas.width, minY = canvas.height, maxX = -1, maxY = -1;
+    for (let y = 0; y < canvas.height; y++) {
+      for (let x = 0; x < canvas.width; x++) {
+        if (src[(y * canvas.width + x) * 4] > INK_THRESHOLD) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    if (maxX < 0) return null; // nothing drawn
+
+    const boxW = maxX - minX + 1;
+    const boxH = maxY - minY + 1;
+
+    // --- 2. scale the longer side to 20px, keeping aspect ratio ---------
+    const scale = DIGIT_BOX / Math.max(boxW, boxH);
+    const dw = Math.max(1, Math.round(boxW * scale));
+    const dh = Math.max(1, Math.round(boxH * scale));
+    const small = downscaleRegion(canvas, minX, minY, boxW, boxH, dw, dh);
+
+    // --- 3. centre of mass of the scaled digit --------------------------
+    let mass = 0, mx = 0, my = 0;
+    const px = new Float32Array(dw * dh);
+    for (let y = 0; y < dh; y++) {
+      for (let x = 0; x < dw; x++) {
+        const v = small[(y * dw + x) * 4] / 255;
+        px[y * dw + x] = v;
+        mass += v;
+        mx += v * x;
+        my += v * y;
+      }
+    }
+    // Fall back to the geometric centre if the digit is somehow empty.
+    const comX = mass > 0 ? mx / mass : (dw - 1) / 2;
+    const comY = mass > 0 ? my / mass : (dh - 1) / 2;
+
+    // Paste so the centre of mass sits at the centre of the 28x28 field,
+    // clamped so the digit can never be pushed off the edge.
+    const centre = MODEL_INPUT_SIZE / 2;
+    const offX = clamp(Math.round(centre - comX), 0, MODEL_INPUT_SIZE - dw);
+    const offY = clamp(Math.round(centre - comY), 0, MODEL_INPUT_SIZE - dh);
+
+    const input = new Array(MODEL_INPUT_SIZE * MODEL_INPUT_SIZE).fill(0);
+    for (let y = 0; y < dh; y++) {
+      for (let x = 0; x < dw; x++) {
+        input[(y + offY) * MODEL_INPUT_SIZE + (x + offX)] = px[y * dw + x];
+      }
+    }
+
+    drawPreview(input);
     return input;
+  }
+
+  function clamp(v, lo, hi) {
+    return v < lo ? lo : v > hi ? hi : v;
+  }
+
+  // Optional: if the page has a <canvas id="mnist-preview">, show the exact
+  // 28x28 the model sees. Handy for eyeballing that preprocessing is sane.
+  function drawPreview(input) {
+    const el = document.getElementById("mnist-preview");
+    if (!el) return;
+    el.width = MODEL_INPUT_SIZE;
+    el.height = MODEL_INPUT_SIZE;
+    const pctx = el.getContext("2d");
+    const img = pctx.createImageData(MODEL_INPUT_SIZE, MODEL_INPUT_SIZE);
+    for (let i = 0; i < input.length; i++) {
+      const v = Math.round(input[i] * 255);
+      img.data[i * 4] = v;
+      img.data[i * 4 + 1] = v;
+      img.data[i * 4 + 2] = v;
+      img.data[i * 4 + 3] = 255;
+    }
+    pctx.putImageData(img, 0, 0);
   }
 
   // ---------------------------------------------------------------------
@@ -185,8 +300,12 @@
       resultEl.textContent = "Model is still loading, try again in a second…";
       return;
     }
-    predictBtn.disabled = true;
     const input = canvasToModelInput();
+    if (!input) {
+      resultEl.textContent = "Draw a digit first!";
+      return;
+    }
+    predictBtn.disabled = true;
     const probs = predict(input);
     renderResult(probs);
     predictBtn.disabled = false;
@@ -197,11 +316,22 @@
     resultEl.innerHTML = "";
   }
 
-  document.addEventListener("DOMContentLoaded", async () => {
-    setupCanvas();
+  async function init() {
+    const canvasEl = document.getElementById("mnist-canvas");
+    const clearBtn = document.getElementById("mnist-clear");
     resultEl = document.getElementById("mnist-result");
     predictBtn = document.getElementById("mnist-predict");
-    document.getElementById("mnist-clear").addEventListener("click", handleClear);
+
+    if (!canvasEl || !clearBtn || !predictBtn || !resultEl) {
+      console.error(
+        "mnist-demo.js: couldn't find #mnist-canvas / #mnist-clear / #mnist-predict / #mnist-result in the page. " +
+        "Make sure mnist-demo.html's markup is on the page before this script runs."
+      );
+      return;
+    }
+
+    setupCanvas();
+    clearBtn.addEventListener("click", handleClear);
     predictBtn.addEventListener("click", handlePredict);
 
     resultEl.textContent = "Loading model…";
@@ -212,5 +342,13 @@
       resultEl.textContent = "Failed to load model: " + err.message;
       console.error(err);
     }
-  });
+  }
+
+  // Run now if the DOM is already parsed (e.g. this script was injected
+  // after page load by a CMS/site builder), otherwise wait for it.
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
