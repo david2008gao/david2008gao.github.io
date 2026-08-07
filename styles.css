@@ -29,6 +29,16 @@ body {
   min-height: 100vh;
 }
 
+img {
+  max-width: 100%;
+  height: auto; /* Maintains the image's original proportions */
+}
+
+.small-img {
+  width: 300px; /* Adjust this value up or down */
+  height: auto;  /* Keeps the proportions correct so it doesn't stretch */
+}
+
 a {
   color: var(--primary-color);
   text-decoration: none;
