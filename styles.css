@@ -96,6 +96,20 @@ footer {
   text-align: center;
 }
 
+/* Base styling for the logo */
+.logo {
+  display: inline-block; /* Required for scaling animations to work properly */
+  color: #333333; /* Your default logo color (change if using a dark theme) */
+  text-decoration: none;
+  transition: transform 0.2s ease, color 0.2s ease; /* Smooth transition when hovering */
+}
+
+/* Hover state */
+.logo:hover {
+  transform: scale(1.08); /* Grows the logo by 8% */
+  color: #535353;         /* Changes color to a lighter gray */
+}
+
 /* Desktop horizontal alignment */
 @media (min-width: 640px) {
   .footer-content {
