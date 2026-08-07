@@ -39,6 +39,45 @@ img {
   height: auto;  /* Keeps the proportions correct so it doesn't stretch */
 }
 
+/* Dropdown Container */
+.dropdown {
+  position: relative;
+}
+
+/* Hidden Submenu */
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%; /* Position right below the main menu bar */
+  left: 0;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  min-width: 160px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  list-style: none;
+  padding: 0.5rem 0;
+  z-index: 100;
+}
+
+/* Dropdown Item Links */
+.dropdown-menu li a {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.dropdown-menu li a:hover {
+  background-color: var(--bg-color);
+  color: var(--primary-color);
+}
+
+/* Reveal Dropdown on Hover */
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
 a {
   color: var(--primary-color);
   text-decoration: none;
